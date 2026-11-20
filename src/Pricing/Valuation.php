@@ -13,6 +13,9 @@ namespace Glubschi\Seat\Contracts\Pricing;
  *             the ship. Shown, not counted.
  * - none:     no capital ship in it.
  *
+ * Rigs count as 0 ISK: one fitted to the ship is destroyed when it is taken out. ESI's public contract items do
+ * not say whether a rig is fitted or packed in the cargo, so every rig counts as fitted.
+ *
  * An auction counts with its buyout; without a buyout it has no net price.
  */
 final class Valuation
@@ -29,9 +32,10 @@ final class Valuation
      * @param  iterable<array{type_id: int, quantity: int, is_included: bool, is_blueprint_copy?: bool|null}>  $items
      * @param  array<int, true>  $capitals  type IDs of capital ships, as a set
      * @param  array<int, float>  $prices  Jita buy by type ID
-     * @return array{valuation: string, main_type_id: int|null, extras_value: float|null, extras_unpriced: int|null, net_price: float|null}
+     * @param  array<int, true>  $rigs  type IDs of rigs, as a set
+     * @return array{valuation: string, main_type_id: int|null, extras_value: float|null, extras_unpriced: int|null, extras_rigs: int|null, net_price: float|null}
      */
-    public static function value(iterable $items, array $capitals, array $prices, string $type, ?float $price, ?float $buyout): array
+    public static function value(iterable $items, array $capitals, array $prices, string $type, ?float $price, ?float $buyout, array $rigs = []): array
     {
         $ships = [];
         $extras = [];
@@ -50,7 +54,7 @@ final class Valuation
             }
         }
 
-        $result = ['valuation' => self::NONE, 'main_type_id' => null, 'extras_value' => null, 'extras_unpriced' => null, 'net_price' => null];
+        $result = ['valuation' => self::NONE, 'main_type_id' => null, 'extras_value' => null, 'extras_unpriced' => null, 'extras_rigs' => null, 'net_price' => null];
         if ($ships === []) {
             return $result;
         }
@@ -64,7 +68,12 @@ final class Valuation
 
         $value = 0.0;
         $unpriced = 0;
+        $rigCount = 0;
         foreach ($extras as $item) {
+            if (isset($rigs[$item['type_id']])) {
+                $rigCount += (int) $item['quantity'];
+                continue;
+            }
             // A blueprint copy has no market; the buy orders for its type are for the original.
             $unitPrice = empty($item['is_blueprint_copy']) ? ($prices[$item['type_id']] ?? null) : null;
             if ($unitPrice === null) {
@@ -81,6 +90,7 @@ final class Valuation
             'main_type_id' => $ships[0],
             'extras_value' => $value,
             'extras_unpriced' => $unpriced,
+            'extras_rigs' => $rigCount,
             'net_price' => $asked === null ? null : $asked - $value,
         ];
     }

@@ -27,20 +27,27 @@ class ViewTest extends TestCase
             'valuation' => 'single', 'main_type_id' => 19722, 'net_price' => 3.05e9, 'extras_value' => 5e7, 'extras_unpriced' => 2,
         ]);
 
+        $now = Carbon::parse('2026-11-20 12:00:00');
+        $filters = Overview::filters(['security' => 'null']);
         $html = view('contracts::index', [
-            'tree' => Overview::build(Carbon::parse('2026-11-20 12:00:00')),
+            'tree' => Overview::build([], $now),
+            'filters' => $filters,
+            'regions' => [10000002 => 'The Forge'],
             'status' => Status::figures(),
             'characters' => [['id' => 7, 'name' => 'Pilot', 'scope' => true, 'online' => true], ['id' => 8, 'name' => 'Alt', 'scope' => false, 'online' => null]],
             'selected' => 7,
         ])->render();
 
+        if ($dump = getenv('CT_DUMP_HTML')) {
+            file_put_contents($dump, $html);
+        }
         $this->assertStringContainsString('Naglfar', $html);
+        $this->assertStringContainsString('Standard hulls', $html);
         $this->assertStringContainsString('3.05 B', $html);
-        $this->assertStringContainsString('50.00 M', $html);
-        $this->assertStringContainsString('2 without price', $html);
-        $this->assertStringContainsString('Structure (unknown to SeAT)', $html);
-        $this->assertStringContainsString('data-contract="1"', $html);
+        $this->assertStringContainsString('data-hull="19722"', $html);
         $this->assertStringContainsString('not in SDE', $html);   // Titan is not in the test SDE
         $this->assertMatchesRegularExpression('/<option value="8"[^>]*disabled/', $html);
+        $this->assertMatchesRegularExpression('/<option value="null"\s+selected/', $html);
+        $this->assertStringContainsString('Reset filters', $html);
     }
 }

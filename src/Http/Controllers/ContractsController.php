@@ -15,28 +15,38 @@ use Seat\Eveapi\Models\RefreshToken;
 use Seat\Web\Http\Controllers\Controller;
 
 /**
- * The Contracts page: capital ships by class and hull with their contracts, the contents of a contract on demand,
- * and opening a contract in the game for one of the user's characters.
+ * The Contracts page: capital ships by class, segment and hull with their figures; per hull its contracts and
+ * price history, and per contract its contents, on demand; opening a contract in the game for one of the user's
+ * characters.
  */
 class ContractsController extends Controller
 {
     /** User setting: the character that opens contracts in the game. */
     public const CHARACTER_SETTING = 'glubschi.contracts.character';
 
-    public function index()
+    public function index(Request $request)
     {
         $characters = $this->overview();
         $saved = (int) setting(self::CHARACTER_SETTING);
         $ids = array_column($characters, 'id');
         $main = (int) (auth()->user()->main_character_id ?? 0);
         $selected = in_array($saved, $ids, true) ? $saved : (in_array($main, $ids, true) ? $main : ($ids[0] ?? null));
+        $filters = Overview::filters($request->query());
 
         return view('contracts::index', [
-            'tree' => Overview::build(),
+            'tree' => Overview::build($filters),
+            'filters' => $filters,
+            'regions' => Overview::regions(),
             'status' => Status::figures(),
             'characters' => $characters,
             'selected' => $selected,
         ]);
+    }
+
+    /** The open contracts and the price history of one hull, with the page's filters. */
+    public function hull(Request $request, int $typeId): JsonResponse
+    {
+        return response()->json(['ok' => true] + Overview::hull($typeId, Overview::filters($request->query())));
     }
 
     /** The contents of one contract, for the row the user opens. */

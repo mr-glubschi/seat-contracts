@@ -17,6 +17,9 @@ final class Stats
 
     public const MIN_FOR_OUTLIERS = 3;
 
+    /** Below this share of the median of the whole class segment, a price is always an outlier. */
+    public const FLOOR = 0.1;
+
     /**
      * @param  array<int, float>  $prices  ship price by contract ID
      * @return array<int, true>  contract IDs whose price is an outlier

@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Glubschi\Seat\Contracts\Jobs\ContractItems;
 use Glubschi\Seat\Contracts\Jobs\DispatchContractItems;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Redis;
 use Seat\Eseye\Containers\EsiResponse as EseyeResponse;
 use Seat\Eseye\Exceptions\RequestFailedException;
@@ -76,6 +77,8 @@ class ContractItemsTest extends TestCase
 
         $status = DB::table('glubschi_contracts')->orderBy('contract_id')->pluck('items_status')->all();
         $this->assertSame(['unavailable', 'unavailable', 'read'], $status);
+        // A 204 without X-Pages is normal here and must not queue SeAT's analytics job.
+        Queue::assertNotPushed(\Seat\Services\Jobs\Analytics::class);
     }
 
     public function test_skips_contracts_already_read(): void

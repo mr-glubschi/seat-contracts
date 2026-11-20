@@ -103,6 +103,16 @@ abstract class TestCase extends Orchestra
             $t->boolean('online');
         });
 
+        Schema::create('dgmTypeEffects', function (Blueprint $t) {
+            $t->integer('typeID');
+            $t->integer('effectID');
+        });
+        Schema::create('invMetaTypes', function (Blueprint $t) {
+            $t->integer('typeID')->primary();
+            $t->integer('parentTypeID')->nullable();
+            $t->integer('metaGroupID');
+        });
+
         // Two capital groups and one ordinary one.
         DB::table('invGroups')->insert([
             ['groupID' => 485, 'groupName' => 'Dreadnought'],

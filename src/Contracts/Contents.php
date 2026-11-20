@@ -8,13 +8,15 @@ use Illuminate\Support\Facades\DB;
 /**
  * The contents of one contract for the page, with item names and today's Jita buy value.
  *
+ * Rigs have no value here: they count as 0 ISK, as in the ship price.
+ *
  * The ship price itself was computed with the Jita buy prices of the day the contents were read; the value
  * shown here is today's and can differ a little.
  */
 final class Contents
 {
     /**
-     * @return array<int, array{type_id: int, name: string, quantity: int, included: bool, capital: bool, bpc: bool, runs: int|null, me: int|null, te: int|null, value: float|null}>|null
+     * @return array<int, array{type_id: int, name: string, quantity: int, included: bool, capital: bool, bpc: bool, rig: bool, runs: int|null, me: int|null, te: int|null, value: float|null}>|null
      *     null when the contract is not in the plugin's table
      */
     public static function of(int $contractId): ?array
@@ -31,11 +33,14 @@ final class Contents
 
         $prices = JitaBuy::prices($items->pluck('type_id')->map(fn ($id) => (int) $id)->all());
         $capitals = Capitals::typeIds();
+        $rigs = Capitals::rigTypeIds();
 
         $out = [];
         foreach ($items as $i) {
             $bpc = (bool) $i->is_blueprint_copy;
-            $unit = $bpc ? null : ($prices[(int) $i->type_id] ?? null);
+            $rig = isset($rigs[(int) $i->type_id]);
+            // Rigs count as 0 ISK (destroyed when taken out of the ship), as in the ship price.
+            $unit = $bpc || $rig ? null : ($prices[(int) $i->type_id] ?? null);
             $out[] = [
                 'type_id' => (int) $i->type_id,
                 'name' => $i->typeName ?? ('#' . $i->type_id),
@@ -43,6 +48,7 @@ final class Contents
                 'included' => (bool) $i->is_included,
                 'capital' => isset($capitals[(int) $i->type_id]),
                 'bpc' => $bpc,
+                'rig' => $rig,
                 'runs' => $i->runs === null ? null : (int) $i->runs,
                 'me' => $i->material_efficiency === null ? null : (int) $i->material_efficiency,
                 'te' => $i->time_efficiency === null ? null : (int) $i->time_efficiency,
