@@ -26,7 +26,7 @@ class ContractsServiceProvider extends AbstractSeatPlugin
         $this->loadRoutesFrom(__DIR__ . '/Http/routes.php');
         $this->loadViewsFrom(__DIR__ . '/resources/views', self::NS);
         $this->loadTranslationsFrom(__DIR__ . '/resources/lang', self::NS);
-        $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/Database/Migrations');
 
         if ($this->app->runningInConsole()) {
             $this->commands([UpdateContracts::class]);
