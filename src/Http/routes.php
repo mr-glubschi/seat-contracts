@@ -10,4 +10,6 @@ Route::group([
     'middleware' => ['web', 'auth', 'locale', 'can:contracts.view'],
 ], function () {
     Route::get('/', [ContractsController::class, 'index'])->name('seatcontracts::home');
+    Route::get('/items/{contractId}', [ContractsController::class, 'items'])->whereNumber('contractId')->name('seatcontracts::items');
+    Route::post('/open-window', [ContractsController::class, 'openWindow'])->name('seatcontracts::open-window');
 });
