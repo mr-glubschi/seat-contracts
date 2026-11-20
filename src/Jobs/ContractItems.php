@@ -10,6 +10,7 @@ use Glubschi\Seat\Contracts\Pricing\Valuation;
 use Illuminate\Support\Facades\DB;
 use Seat\Eseye\Exceptions\RequestFailedException;
 use Seat\Eveapi\Jobs\EsiBase;
+use Seat\Services\Contracts\EsiResponse;
 
 /**
  * Reads the contents of a group of public contracts, one after the other, and values each one.
@@ -127,14 +128,7 @@ class ContractItems extends EsiBase
             'item_id' => $i->item_id ?? null,
         ], $items);
 
-        $valuation = Valuation::value(
-            $rows,
-            Capitals::typeIds(),
-            self::pricesFor($rows),
-            $contract->type,
-            $contract->price === null ? null : (float) $contract->price,
-            $contract->buyout === null ? null : (float) $contract->buyout,
-        );
+        $valuation = self::valuate($contract, $rows);
 
         DB::transaction(function () use ($contract, $rows, $valuation, $now) {
             DB::table(PublicContracts::ITEMS_TABLE)->where('contract_id', $contract->contract_id)->delete();
@@ -148,18 +142,48 @@ class ContractItems extends EsiBase
         });
     }
 
+    /**
+     * The valuation of a contract from its item rows, with the Jita buy prices of today. Used when the contents
+     * are read, and by contracts:revalue.
+     *
+     * @param  object  $contract  row of glubschi_contracts (type, price, buyout)
+     * @param  array<int, array>  $rows  item rows as stored in glubschi_contract_items
+     */
+    public static function valuate(object $contract, array $rows): array
+    {
+        return Valuation::value(
+            $rows,
+            Capitals::typeIds(),
+            self::pricesFor($rows),
+            $contract->type,
+            $contract->price === null ? null : (float) $contract->price,
+            $contract->buyout === null ? null : (float) $contract->buyout,
+            Capitals::rigTypeIds(),
+        );
+    }
+
+    /**
+     * SeAT logs a warning and queues an analytics job when a paged request comes back without X-Pages. ESI's 204
+     * for an expired contract has no X-Pages, and thousands of them are normal here, so they are not reported.
+     */
+    public function warning(EsiResponse $response): void
+    {
+        if ($response->getStatusCode() === 204) {
+            return;
+        }
+        parent::warning($response);
+    }
+
     /** Jita buy prices are only looked up for contracts with a capital ship; the others need none. */
     private static function pricesFor(array $rows): array
     {
         $capitals = Capitals::typeIds();
-        $hasCapital = false;
         foreach ($rows as $row) {
-            if (isset($capitals[$row['type_id']])) {
-                $hasCapital = true;
-                break;
+            if (isset($capitals[(int) $row['type_id']])) {
+                return JitaBuy::prices(array_map(fn ($r) => (int) $r['type_id'], $rows));
             }
         }
 
-        return $hasCapital ? JitaBuy::prices(array_column($rows, 'type_id')) : [];
+        return [];
     }
 }

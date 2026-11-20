@@ -93,4 +93,17 @@ class ValuationTest extends TestCase
         $this->assertSame(Valuation::NONE, $v['valuation']);
         $this->assertNull($v['extras_value']);
     }
+
+    public function test_rigs_count_as_zero_and_are_counted_separately(): void
+    {
+        $items = [self::item(self::NAGLFAR), self::item(5001, 3), self::item(3001)];
+        $prices = [5001 => 100_000_000.0, 3001 => 10_000_000.0];
+
+        $v = Valuation::value($items, self::CAPITALS, $prices, 'item_exchange', 3e9, null, [5001 => true]);
+
+        $this->assertSame(10_000_000.0, $v['extras_value']);
+        $this->assertSame(3, $v['extras_rigs']);
+        $this->assertSame(0, $v['extras_unpriced']);
+        $this->assertSame(2_990_000_000.0, $v['net_price']);
+    }
 }

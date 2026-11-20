@@ -2,6 +2,8 @@
 
 namespace Glubschi\Seat\Contracts;
 
+use Glubschi\Seat\Contracts\Commands\PruneContracts;
+use Glubschi\Seat\Contracts\Commands\RevalueContracts;
 use Glubschi\Seat\Contracts\Commands\UpdateContracts;
 use Glubschi\Seat\Contracts\Database\Seeders\ScheduleSeeder;
 use Seat\Services\AbstractSeatPlugin;
@@ -29,7 +31,7 @@ class ContractsServiceProvider extends AbstractSeatPlugin
         $this->loadMigrationsFrom(__DIR__ . '/Database/Migrations');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([UpdateContracts::class]);
+            $this->commands([UpdateContracts::class, RevalueContracts::class, PruneContracts::class]);
         }
     }
 

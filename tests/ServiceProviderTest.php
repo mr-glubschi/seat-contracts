@@ -14,6 +14,7 @@ class ServiceProviderTest extends TestCase
     {
         $routes = [
             'home' => ['contracts', 'GET'],
+            'hull' => ['contracts/hull/{typeId}', 'GET'],
             'items' => ['contracts/items/{contractId}', 'GET'],
             'open-window' => ['contracts/open-window', 'POST'],
         ];
@@ -61,12 +62,13 @@ class ServiceProviderTest extends TestCase
 
     public function test_registers_the_command_and_its_schedule(): void
     {
-        $this->assertArrayHasKey('contracts:update', Artisan::all());
+        foreach (['contracts:update', 'contracts:revalue', 'contracts:prune'] as $command) {
+            $this->assertArrayHasKey($command, Artisan::all());
+        }
         $this->assertContains(ScheduleSeeder::class, config('seat.seeders'));
 
-        $schedule = (new ScheduleSeeder())->getSchedules()[0];
-        $this->assertSame('contracts:update', $schedule['command']);
-        $this->assertSame('7,37 * * * *', $schedule['expression']);
+        $schedules = array_column((new ScheduleSeeder())->getSchedules(), 'expression', 'command');
+        $this->assertSame(['contracts:update' => '7,37 * * * *', 'contracts:prune' => '23 4 * * *'], $schedules);
     }
 
     public function test_reads_its_config(): void
