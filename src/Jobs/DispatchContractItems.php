@@ -4,6 +4,7 @@ namespace Glubschi\Seat\Contracts\Jobs;
 
 use Carbon\Carbon;
 use Glubschi\Seat\Contracts\Contracts\PublicContracts;
+use Glubschi\Seat\Contracts\Contracts\Resolver;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -26,6 +27,13 @@ class DispatchContractItems implements ShouldQueue
     {
         foreach (self::jobs(Carbon::now()) as $job) {
             dispatch($job)->onQueue('public');
+        }
+
+        // Names of issuers and locations for the page; a failure here must not stop the contents.
+        try {
+            Resolver::dispatch();
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 

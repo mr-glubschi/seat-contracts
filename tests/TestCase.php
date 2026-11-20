@@ -73,6 +73,36 @@ abstract class TestCase extends Orchestra
             $t->bigInteger('type_id');
         });
 
+        Schema::create('staStations', function (Blueprint $t) {
+            $t->integer('stationID')->primary();
+            $t->string('stationName');
+            $t->integer('solarSystemID');
+        });
+        Schema::create('solar_systems', function (Blueprint $t) {
+            $t->integer('system_id')->primary();
+            $t->integer('region_id');
+            $t->string('name');
+            $t->double('security');
+        });
+        Schema::create('universe_structures', function (Blueprint $t) {
+            $t->bigInteger('structure_id')->primary();
+            $t->string('name');
+            $t->integer('solar_system_id');
+        });
+        Schema::create('universe_stations', function (Blueprint $t) {
+            $t->bigInteger('station_id')->primary();
+            $t->string('name');
+        });
+        Schema::create('universe_names', function (Blueprint $t) {
+            $t->bigInteger('entity_id')->primary();
+            $t->string('name');
+            $t->string('category');
+        });
+        Schema::create('character_onlines', function (Blueprint $t) {
+            $t->bigInteger('character_id')->primary();
+            $t->boolean('online');
+        });
+
         // Two capital groups and one ordinary one.
         DB::table('invGroups')->insert([
             ['groupID' => 485, 'groupName' => 'Dreadnought'],

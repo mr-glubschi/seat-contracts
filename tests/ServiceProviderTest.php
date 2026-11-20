@@ -10,14 +10,20 @@ use Illuminate\Support\Facades\Schema;
 
 class ServiceProviderTest extends TestCase
 {
-    public function test_registers_the_page_with_seat_middleware(): void
+    public function test_registers_the_routes_with_seat_middleware(): void
     {
-        $route = Route::getRoutes()->getByName('seatcontracts::home');
-
-        $this->assertNotNull($route);
-        $this->assertSame('contracts', $route->uri());
-        $this->assertContains('GET', $route->methods());
-        $this->assertSame(['web', 'auth', 'locale', 'can:contracts.view'], $route->gatherMiddleware());
+        $routes = [
+            'home' => ['contracts', 'GET'],
+            'items' => ['contracts/items/{contractId}', 'GET'],
+            'open-window' => ['contracts/open-window', 'POST'],
+        ];
+        foreach ($routes as $name => [$uri, $method]) {
+            $route = Route::getRoutes()->getByName('seatcontracts::' . $name);
+            $this->assertNotNull($route, $name);
+            $this->assertSame($uri, $route->uri());
+            $this->assertContains($method, $route->methods());
+            $this->assertSame(['web', 'auth', 'locale', 'can:contracts.view'], $route->gatherMiddleware());
+        }
     }
 
     public function test_registers_the_view_permission(): void
@@ -73,6 +79,6 @@ class ServiceProviderTest extends TestCase
     {
         $this->assertSame('Contracts', trans('contracts::menu.main'));
         $this->assertSame('View Contracts', trans('contracts::permissions.view_label'));
-        $this->assertSame('Ship class', trans('contracts::global.col_group'));
+        $this->assertSame('Ship class / hull', trans('contracts::global.col_ship'));
     }
 }

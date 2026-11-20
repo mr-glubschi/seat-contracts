@@ -4,8 +4,9 @@ A [SeAT 5](https://github.com/eveseat/seat) plugin that collects the contracts f
 and shows what a hull costs: lowest price, median, average and the price over time, grouped by ship class and
 hull, with every single contract one click away in the game.
 
-> **Status: v0.1 (collection).** The plugin reads all public contracts with their contents and values the
-> capital ships; the page shows how far the collection is. The tables by ship class and hull follow in 0.2.
+> **Status: v0.2 (overview).** All public contracts with their contents; capital ships by class and hull with
+> lowest price, median and average, every contract with its contents and a button to open it in the game. The
+> price history follows in 0.3.
 
 Sister plugins: [Quick Sell](https://github.com/mr-glubschi/seat-quick-sell),
 [Market Orders](https://github.com/mr-glubschi/seat-market-orders).
@@ -29,8 +30,16 @@ Sister plugins: [Quick Sell](https://github.com/mr-glubschi/seat-quick-sell),
   Items with no market (blueprint copies, abyssal modules, …) count as 0 ISK; such contracts are marked,
   since their ship price may be too high.
 - **Statistics:** the median is the main figure, since single contracts for 1 ISK or for absurd prices would
-  distort an average. Prices far from the median are left out of the figures but stay in the list, marked.
-  Contracts with more than one capital ship, and auctions without a buyout, are shown but not counted.
+  distort an average. A ship price below half or above twice the median of its hull is an *outlier* (from 3
+  contracts of that hull on): left out of the figures, but listed and marked. Contracts with more than one
+  capital ship, contracts that ask for items in return, and auctions without a buyout are listed but not
+  counted. The class figures are taken over the counted contracts of all its hulls, so a class with expensive
+  faction hulls has a higher average than its standard hulls.
+- **Locations and issuers:** NPC stations come from the SDE. Upwell structures and issuer names are only known
+  when SeAT has seen them, so after every update the plugin asks SeAT's own jobs for the missing ones of open
+  capital contracts (`Universe\Names`, and `StructureBatch` with the token of the next character that has
+  `esi-universe.read_structures.v1`). A structure none of your characters may dock at stays unknown; the page
+  then shows its region only.
 - **Expired contracts** are no longer shown, but stay in the plugin's tables for the price history.
 
 ## Price history
@@ -118,7 +127,7 @@ docker compose exec front php artisan contracts:update
 | Version | Content |
 | --- | --- |
 | 0.1 | Skeleton: package, menu entry, permission, tables, job for all public contracts in all regions with their contents, ship price without fitting at Jita buy, status page |
-| 0.2 | Overview by ship class and hull with lowest price, median and average, contract list, open in game |
+| 0.2 | Overview by ship class and hull with lowest price, median and average, outliers, contract list with contents, open in game, names of issuers and structures |
 | 0.3 | Price history: chart per hull, trend over 7 and 30 days, *probably sold* line |
 | 0.4 | Private and corporation contracts from SeAT's tables, with real sales |
 | later | Setting to delete the items of long expired contracts, more groups on the pages (faction ships, blueprint copies by runs, ME and TE, any item), jumps from your location |
